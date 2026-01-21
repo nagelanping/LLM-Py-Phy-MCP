@@ -30,20 +30,92 @@ CHINESE_FONT_PATTERNS = [
 
 
 def find_chinese_fonts():
-    """查找系统中的常用中文字体"""
-    found_fonts = []
+    """查找系统中的常用中文字体，按家族分组"""
+    families = {}
     
     for font_dir in SYSTEM_FONT_PATHS:
         font_path = Path(font_dir)
         if not font_path.exists():
             continue
         
+        # 使用目录名作为家族标识
+        family_name = font_path.name
+        fonts_in_family = []
+        
         for ext in ["*.ttf", "*.otf", "*.ttc"]:
             for font_file in font_path.rglob(ext):
                 if font_file.is_file() and any(p.lower() in font_file.name.lower() for p in CHINESE_FONT_PATTERNS):
-                    found_fonts.append(font_file)
+                    fonts_in_family.append(font_file)
+        
+        if fonts_in_family:
+            families[family_name] = sorted(set(fonts_in_family))
     
-    return sorted(set(found_fonts))
+    return families
+
+
+def get_family_display_name(family_key):
+    """获取字体家族的友好显示名称"""
+    display_names = {
+        "sarasa-gothic": "更纱黑体 (Sarasa Gothic)",
+        "noto": "思源黑体 (Noto Sans CJK)",
+        "wqy": "文泉驿 (WenQuanYi)",
+    }
+    return display_names.get(family_key, family_key)
+
+
+def calculate_family_size(font_files):
+    """计算字体家族的总大小（MB）"""
+    total_size = sum(f.stat().st_size for f in font_files)
+    return total_size / (1024 * 1024)
+
+
+def display_font_families(families):
+    """显示字体家族列表"""
+    print("\n找到以下字体家族:")
+    family_list = []
+    
+    for idx, (family_key, fonts) in enumerate(families.items(), 1):
+        display_name = get_family_display_name(family_key)
+        size_mb = calculate_family_size(fonts)
+        print(f"  {idx}. {display_name} - {len(fonts)}个字体, {size_mb:.1f}MB")
+        family_list.append(family_key)
+    
+    return family_list
+
+
+def select_families_interactive(families):
+    """交互式选择字体家族"""
+    family_list = display_font_families(families)
+    
+    while True:
+        choice = input("\n请输入要链接的字体家族编号 (多选用逗号分隔, 如: 1,3): ").strip()
+        
+        if not choice:
+            print("✗ 未选择任何字体家族")
+            return []
+        
+        try:
+            indices = [int(x.strip()) for x in choice.split(",")]
+            selected = []
+            for idx in indices:
+                if 1 <= idx <= len(family_list):
+                    selected.append(family_list[idx - 1])
+                else:
+                    print(f"✗ 无效的编号: {idx}")
+                    return None
+            return selected
+        except ValueError:
+            print("✗ 输入格式错误，请输入数字")
+            return None
+
+
+def get_fonts_from_families(families, selected_family_keys):
+    """从选中的字体家族中获取所有字体文件"""
+    fonts = []
+    for key in selected_family_keys:
+        if key in families:
+            fonts.extend(families[key])
+    return fonts
 
 
 def link_fonts(font_files):
