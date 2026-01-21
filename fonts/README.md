@@ -18,6 +18,11 @@
 
 ## 使用方法
 
+### 方法0：使用安装脚本
+```bash
+python setup_chinese_fonts.py
+```
+
 ### 方法1：复制字体文件到此文件夹
 ```bash
 # 复制系统字体到 fonts 文件夹

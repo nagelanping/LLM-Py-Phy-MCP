@@ -141,14 +141,7 @@ pip install -r requirements.txt
 使用 [`setup_chinese_fonts.py`](setup_chinese_fonts.py) 自动配置中文字体：
 
 ```bash
-# 自动查找并链接系统字体
-python setup_chinese_fonts.py auto
-
-# 链接指定字体目录
-python setup_chinese_fonts.py link /usr/share/fonts/truetype/wqy
-
-# 列出当前配置的字体
-python setup_chinese_fonts.py list
+python setup_chinese_fonts.py
 ```
 
 ## MCP 配置
