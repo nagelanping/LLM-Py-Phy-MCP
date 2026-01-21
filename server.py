@@ -228,15 +228,25 @@ try:
     import matplotlib.pyplot as plt
     import matplotlib.font_manager as fm
 
+    # 动态加载 fonts/ 目录中的所有字体文件
+    font_families = []
     if fonts_dir.exists():
-        for font_file in fonts_dir.glob("*.ttf"):
-            fm.fontManager.addfont(str(font_file))
-        for font_file in fonts_dir.glob("*.otf"):
-            fm.fontManager.addfont(str(font_file))
-        for font_file in fonts_dir.glob("*.ttc"):
-            fm.fontManager.addfont(str(font_file))
-
-        plt.rcParams['font.sans-serif'] = ['Noto Sans CJK SC', 'WenQuanYi Micro Hei', 'SimHei', 'Microsoft YaHei', 'DejaVu Sans']
+        for ext in ["*.ttf", "*.otf", "*.ttc"]:
+            for font_file in fonts_dir.glob(ext):
+                try:
+                    # 添加字体到 matplotlib
+                    fm.fontManager.addfont(str(font_file))
+                    # 从文件中提取真实字体名称
+                    prop = fm.FontProperties(fname=str(font_file))
+                    family_name = prop.get_name()
+                    if family_name not in font_families:
+                        font_families.append(family_name)
+                except Exception:
+                    pass
+    
+    # 使用实际加载的字体配置 matplotlib
+    if font_families:
+        plt.rcParams['font.sans-serif'] = font_families
         plt.rcParams['axes.unicode_minus'] = False
 except ImportError:
     pass
