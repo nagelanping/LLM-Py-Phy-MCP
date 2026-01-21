@@ -53,31 +53,13 @@ def find_chinese_fonts():
     return families
 
 
-def get_family_display_name(family_key):
-    """获取字体家族的友好显示名称"""
-    display_names = {
-        "sarasa-gothic": "更纱黑体 (Sarasa Gothic)",
-        "noto": "思源黑体 (Noto Sans CJK)",
-        "wqy": "文泉驿 (WenQuanYi)",
-    }
-    return display_names.get(family_key, family_key)
-
-
-def calculate_family_size(font_files):
-    """计算字体家族的总大小（MB）"""
-    total_size = sum(f.stat().st_size for f in font_files)
-    return total_size / (1024 * 1024)
-
-
 def display_font_families(families):
     """显示字体家族列表"""
     print("\n找到以下字体家族:")
     family_list = []
     
     for idx, (family_key, fonts) in enumerate(families.items(), 1):
-        display_name = get_family_display_name(family_key)
-        size_mb = calculate_family_size(fonts)
-        print(f"  {idx}. {display_name} - {len(fonts)}个字体, {size_mb:.1f}MB")
+        print(f"  {idx}. {family_key} - {len(fonts)}个字体")
         family_list.append(family_key)
     
     return family_list
@@ -187,14 +169,16 @@ def print_usage():
   python setup_chinese_fonts.py [命令] [参数]
 
 命令:
-  (无参数)      交互式模式，自动查找系统字体
-  auto          自动模式：查找并链接系统字体
-  link <目录>   链接整个字体目录到 fonts 文件夹
-  list          列出当前 fonts 文件夹中的字体
+  (无参数)           交互式模式，选择字体家族
+  auto               自动模式：链接第一个可用字体家族
+  --family <名称>    链接指定的字体家族
+  link <目录>        链接整个字体目录到 fonts 文件夹
+  list               列出当前 fonts 文件夹中的字体
 
 示例:
   python setup_chinese_fonts.py
   python setup_chinese_fonts.py auto
+  python setup_chinese_fonts.py --family sarasa-gothic
   python setup_chinese_fonts.py link /usr/share/fonts/truetype/wqy
   python setup_chinese_fonts.py list
 """)
@@ -244,11 +228,11 @@ def main():
     for font in current_fonts:
         print(f"  - {font.name}")
     
-    # 查找系统字体
+    # 查找系统字体（按家族分组）
     print("\n正在查找常用中文字体...")
-    system_fonts = find_chinese_fonts()
+    font_families = find_chinese_fonts()
     
-    if not system_fonts:
+    if not font_families:
         print("✗ 未找到常用中文字体")
         print("\n建议操作:")
         print("  1. 安装常用中文字体包:")
@@ -257,39 +241,78 @@ def main():
         print("     python setup_chinese_fonts.py link <字体目录>")
         return
     
-    print(f"✓ 找到 {len(system_fonts)} 个常用中文字体:")
-    for i, font in enumerate(system_fonts[:10], 1):  # 只显示前10个
-        size = font.stat().st_size / 1024
-        print(f"  {i}. {font.name} ({size:.1f} KB)")
-    if len(system_fonts) > 10:
-        print(f"  ... 还有 {len(system_fonts) - 10} 个字体")
+    # 处理 --family 参数
+    if "--family" in args:
+        family_idx = args.index("--family")
+        if family_idx + 1 < len(args):
+            family_name = args[family_idx + 1]
+            if family_name in font_families:
+                print(f"\n选择字体家族: {family_name}")
+                fonts_to_link = font_families[family_name]
+                print(f"找到 {len(fonts_to_link)} 个字体文件")
+                print("\n正在创建符号链接...")
+                linked = link_fonts(fonts_to_link)
+                print(f"\n✓ 成功链接 {len(linked)} 个字体文件")
+                print("\n下一步: 重启 MCP 服务器\n")
+            else:
+                print(f"✗ 未找到字体家族: {family_name}")
+                print("\n可用的字体家族:")
+                for key in font_families.keys():
+                    print(f"  - {key}")
+        else:
+            print("✗ --family 参数需要指定字体家族名称")
+        return
     
-    # 自动模式直接链接
+    # 自动模式：链接第一个字体家族
     if "auto" in args:
+        first_family = list(font_families.keys())[0]
+        print(f"\n自动选择字体家族: {first_family}")
+        fonts_to_link = font_families[first_family]
+        print(f"找到 {len(fonts_to_link)} 个字体文件")
         print("\n正在创建符号链接...")
-        linked = link_fonts(system_fonts)
+        linked = link_fonts(fonts_to_link)
         print(f"\n✓ 成功链接 {len(linked)} 个字体文件")
         print("\n下一步: 重启 MCP 服务器\n")
         return
     
-    # 交互式模式
+    # 交互式模式：显示字体家族供用户选择
+    selected_families = None
+    while selected_families is None:
+        selected_families = select_families_interactive(font_families)
+        if selected_families is None:
+            retry = input("是否重新输入? (y/n): ").strip().lower()
+            if retry != 'y':
+                print("\n未执行任何操作")
+                return
+    
+    if not selected_families:
+        print("\n未执行任何操作")
+        return
+    
+    # 获取选中家族的所有字体
+    fonts_to_link = get_fonts_from_families(font_families, selected_families)
+    print(f"\n选中的字体家族: {', '.join(selected_families)}")
+    print(f"共 {len(fonts_to_link)} 个字体文件")
+    
+    # 询问操作方式
     print("\n请选择操作:")
     print("  1. 创建符号链接 (推荐，节省空间)")
     print("  2. 复制字体文件")
-    print("  3. 仅显示信息，不操作")
+    print("  3. 取消")
     
     choice = input("\n请输入选项 (1/2/3): ").strip()
     
     if choice == "1":
         print("\n正在创建符号链接...")
-        linked = link_fonts(system_fonts)
+        linked = link_fonts(fonts_to_link)
         print(f"\n✓ 成功链接 {len(linked)} 个字体文件")
     elif choice == "2":
         print("\n正在复制字体文件...")
-        copied = copy_fonts(system_fonts)
+        copied = copy_fonts(fonts_to_link)
         print(f"\n✓ 成功复制 {len(copied)} 个字体文件")
     else:
         print("\n未执行任何操作")
+        return
     
     print("\n下一步: 重启 MCP 服务器\n")
 
