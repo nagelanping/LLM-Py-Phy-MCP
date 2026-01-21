@@ -65,10 +65,23 @@ def verify_venv() -> dict:
 VENV_PYTHON = get_venv_python()
 VENV_INFO = verify_venv()
 
+# ============================================================
+# FONT CONFIGURATION FOR CHINESE CHARACTERS
+# ============================================================
+
+# Get the fonts directory path
+FONTS_DIR = Path(__file__).parent / "fonts"
+FONTS_DIR.mkdir(exist_ok=True)
+
+# Set environment variables for matplotlib to find Chinese fonts
+os.environ["MPLCONFIGDIR"] = str(Path(__file__).parent / ".matplotlib")
+os.environ["FONTCONFIG_PATH"] = str(FONTS_DIR)
+
 # Startup logging
 print(f"Python MCP Server Starting...", file=sys.stderr)
 print(f"   Virtual Environment: {'YES' if VENV_INFO['in_venv'] else 'NO'}", file=sys.stderr)
 print(f"   Python: {VENV_PYTHON}", file=sys.stderr)
+print(f"   Fonts Directory: {FONTS_DIR}", file=sys.stderr)
 
 
 # ============================================================
@@ -221,10 +234,44 @@ async def execute_python(args: dict) -> list[TextContent]:
     code = args["code"]
     working_dir = args.get("working_dir", "/tmp")
     timeout = args.get("timeout", 30)
-    
+
+    # Prepend matplotlib font configuration for Chinese characters
+    font_config = f"""
+# Auto-injected: Chinese font configuration for matplotlib
+import os
+from pathlib import Path
+
+fonts_dir = Path(r"{FONTS_DIR}")
+os.environ["MPLCONFIGDIR"] = str(Path(r"{Path(__file__).parent}") / ".matplotlib")
+
+# Configure matplotlib to use Chinese fonts
+try:
+    import matplotlib
+    matplotlib.use('Agg')  # Use non-interactive backend
+    import matplotlib.pyplot as plt
+    import matplotlib.font_manager as fm
+
+    # Add fonts directory to matplotlib font manager
+    if fonts_dir.exists():
+        font_files = list(fonts_dir.glob("*.ttf")) + list(fonts_dir.glob("*.otf")) + list(fonts_dir.glob("*.ttc"))
+        for font_file in font_files:
+            try:
+                fm.fontManager.addfont(str(font_file))
+            except:
+                pass
+
+        # Set default font properties for Chinese characters
+        plt.rcParams['font.sans-serif'] = ['SimHei', 'SimSun', 'Noto Sans CJK SC', 'DejaVu Sans']
+        plt.rcParams['axes.unicode_minus'] = False  # Fix minus sign display
+except ImportError:
+    pass  # matplotlib not installed
+
+# End of auto-injected font configuration
+"""
+
     # Create temporary script
     script_path = Path(working_dir) / f"mcp_exec_{os.getpid()}.py"
-    script_path.write_text(code)
+    script_path.write_text(font_config + "\n" + code)
     
     try:
         result = subprocess.run(
