@@ -22,8 +22,7 @@ openpyxl>=3.1.0            # Excel 文件读写 (.xlsx)
 xlrd>=2.0.1                # Excel 文件读取 (.xls)
 xlsxwriter>=3.1.0          # Excel 文件写入（高级格式）
 python-docx>=0.8.11        # Word 文档 (.docx) 处理
-pypdf>=3.15.0              # PDF 读取和提取
-PyPDF2>=3.0.0              # PDF 处理（备选）
+pypdf>=3.15.0              # PDF 读取和提取（替代PyPDF2）
 pdfplumber>=0.9.0          # PDF 表格提取
 reportlab>=4.0.0           # PDF 生成
 pillow>=10.0.0             # 图像处理
@@ -43,9 +42,8 @@ jinja2>=3.1.0              # 模板引擎
 # ============================================
 # 网络请求与API
 # ============================================
-requests>=2.31.0           # HTTP 请求
-httpx>=0.24.0              # 异步 HTTP 客户端
-aiohttp>=3.8.0             # 异步 HTTP 服务器/客户端
+requests>=2.31.0           # HTTP 请求（同步）
+httpx>=0.24.0              # HTTP 客户端（支持同步和异步）
 urllib3>=2.0.0             # HTTP 连接池
 
 # ============================================

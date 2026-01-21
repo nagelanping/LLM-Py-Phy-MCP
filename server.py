@@ -23,47 +23,41 @@ from mcp.types import Tool, TextContent
 # ============================================================
 
 def get_venv_python() -> str:
-    """Get the virtual environment's Python interpreter path."""
-    # Check if already in venv
-    if hasattr(sys, 'real_prefix') or (hasattr(sys, 'base_prefix') and sys.base_prefix != sys.prefix):
+    """获取虚拟环境的 Python 解释器路径。"""
+    # 检查是否已在虚拟环境中
+    in_venv = hasattr(sys, 'real_prefix') or (
+        hasattr(sys, 'base_prefix') and sys.base_prefix != sys.prefix
+    )
+    if in_venv:
         return sys.executable
     
-    # Look for venv in script directory
+    # 在脚本目录中查找虚拟环境
     script_dir = Path(__file__).parent
-    venv_python = script_dir / "venv" / "bin" / "python"
+    venv_paths = [
+        script_dir / "venv" / "bin" / "python",
+        script_dir / ".venv" / "bin" / "python",
+        script_dir / "venv" / "Scripts" / "python.exe",
+    ]
     
-    if venv_python.exists():
-        return str(venv_python)
+    for venv_python in venv_paths:
+        if venv_python.is_file():
+            return str(venv_python)
     
-    # Try common venv names
-    for venv_name in [".venv", "env"]:
-        venv_path = script_dir / venv_name / "bin" / "python"
-        if venv_path.exists():
-            return str(venv_path)
-    
-    # Fallback to system Python with warning
-    print(f"WARNING: Virtual environment not found, using system Python: {sys.executable}", 
-          file=sys.stderr)
+    # 回退到系统 Python
+    print(f"警告: 未找到虚拟环境，使用系统 Python: {sys.executable}", file=sys.stderr)
     return sys.executable
 
 
-def verify_venv() -> dict:
-    """Verify virtual environment status."""
-    info = {
-        "in_venv": False,
-        "python_executable": sys.executable,
-        "venv_python": get_venv_python(),
-    }
-    
-    if hasattr(sys, 'real_prefix') or (hasattr(sys, 'base_prefix') and sys.base_prefix != sys.prefix):
-        info["in_venv"] = True
-    
-    return info
+def is_in_venv() -> bool:
+    """检查是否在虚拟环境中运行。"""
+    return hasattr(sys, 'real_prefix') or (
+        hasattr(sys, 'base_prefix') and sys.base_prefix != sys.prefix
+    )
 
 
 # Initialize venv paths
 VENV_PYTHON = get_venv_python()
-VENV_INFO = verify_venv()
+VENV_INFO = {'in_venv': is_in_venv(), 'python_path': VENV_PYTHON}
 
 # ============================================================
 # FONT CONFIGURATION FOR CHINESE CHARACTERS
@@ -97,28 +91,21 @@ async def list_tools() -> list[Tool]:
     return [
         Tool(
             name="python_execute",
-            description=(
-                "Execute Python code in a real system environment (non-sandboxed). Supports:\n"
-                "- Full system access (file I/O, network, subprocess)\n"
-                "- Package imports (numpy, pandas, requests, etc.)\n"
-                "- Multi-line code execution\n"
-                "- Returns stdout, stderr, and return value\n"
-                "CAUTION: Code runs with user-level permissions"
-            ),
+            description="执行Python代码，支持完整系统访问、包导入、多行代码，返回stdout/stderr",
             inputSchema={
                 "type": "object",
                 "properties": {
                     "code": {
                         "type": "string",
-                        "description": "Python code to execute"
+                        "description": "要执行的Python代码"
                     },
                     "working_dir": {
                         "type": "string",
-                        "description": "Working directory for execution (optional, defaults to /tmp)"
+                        "description": "工作目录(可选，默认/tmp)"
                     },
                     "timeout": {
                         "type": "number",
-                        "description": "Execution timeout in seconds (default: 30)"
+                        "description": "超时秒数(默认30)"
                     }
                 },
                 "required": ["code"]
@@ -126,20 +113,17 @@ async def list_tools() -> list[Tool]:
         ),
         Tool(
             name="python_install",
-            description=(
-                "Install Python packages using pip in the virtual environment. "
-                "Supports single or multiple package installations."
-            ),
+            description="使用pip安装Python包，支持单个或多个包",
             inputSchema={
                 "type": "object",
                 "properties": {
                     "packages": {
                         "type": "string",
-                        "description": "Package name(s) to install (space-separated, e.g., 'numpy pandas requests')"
+                        "description": "包名(空格分隔，如'numpy pandas')"
                     },
                     "upgrade": {
                         "type": "boolean",
-                        "description": "Upgrade if already installed (default: false)"
+                        "description": "是否升级(默认false)"
                     }
                 },
                 "required": ["packages"]
@@ -147,29 +131,26 @@ async def list_tools() -> list[Tool]:
         ),
         Tool(
             name="python_run_script",
-            description=(
-                "Run a Python script file from the filesystem. "
-                "Executes with full system permissions."
-            ),
+            description="运行Python脚本文件",
             inputSchema={
                 "type": "object",
                 "properties": {
                     "script_path": {
                         "type": "string",
-                        "description": "Absolute path to the Python script"
+                        "description": "脚本绝对路径"
                     },
                     "args": {
                         "type": "array",
                         "items": {"type": "string"},
-                        "description": "Command-line arguments for the script"
+                        "description": "命令行参数"
                     },
                     "working_dir": {
                         "type": "string",
-                        "description": "Working directory (optional)"
+                        "description": "工作目录(可选)"
                     },
                     "timeout": {
                         "type": "number",
-                        "description": "Execution timeout in seconds (default: 60)"
+                        "description": "超时秒数(默认60)"
                     }
                 },
                 "required": ["script_path"]
@@ -177,16 +158,13 @@ async def list_tools() -> list[Tool]:
         ),
         Tool(
             name="python_eval",
-            description=(
-                "Evaluate a Python expression and return the result. "
-                "Quick evaluation for simple expressions (e.g., math calculations, data transformations)."
-            ),
+            description="快速求值Python表达式并返回结果",
             inputSchema={
                 "type": "object",
                 "properties": {
                     "expression": {
                         "type": "string",
-                        "description": "Python expression to evaluate"
+                        "description": "要求值的表达式"
                     }
                 },
                 "required": ["expression"]
@@ -194,7 +172,7 @@ async def list_tools() -> list[Tool]:
         ),
         Tool(
             name="python_list_packages",
-            description="List all installed Python packages in the virtual environment.",
+            description="列出所有已安装的Python包",
             inputSchema={
                 "type": "object",
                 "properties": {},
@@ -237,36 +215,31 @@ async def execute_python(args: dict) -> list[TextContent]:
 
     # Prepend matplotlib font configuration for Chinese characters
     font_config = f"""
-# Auto-injected: Chinese font configuration for matplotlib
+# Auto-injected: Chinese font configuration
 import os
 from pathlib import Path
 
 fonts_dir = Path(r"{FONTS_DIR}")
 os.environ["MPLCONFIGDIR"] = str(Path(r"{Path(__file__).parent}") / ".matplotlib")
 
-# Configure matplotlib to use Chinese fonts
 try:
     import matplotlib
-    matplotlib.use('Agg')  # Use non-interactive backend
+    matplotlib.use('Agg')
     import matplotlib.pyplot as plt
     import matplotlib.font_manager as fm
 
-    # Add fonts directory to matplotlib font manager
     if fonts_dir.exists():
-        font_files = list(fonts_dir.glob("*.ttf")) + list(fonts_dir.glob("*.otf")) + list(fonts_dir.glob("*.ttc"))
-        for font_file in font_files:
-            try:
-                fm.fontManager.addfont(str(font_file))
-            except:
-                pass
+        for font_file in fonts_dir.glob("*.ttf"):
+            fm.fontManager.addfont(str(font_file))
+        for font_file in fonts_dir.glob("*.otf"):
+            fm.fontManager.addfont(str(font_file))
+        for font_file in fonts_dir.glob("*.ttc"):
+            fm.fontManager.addfont(str(font_file))
 
-        # Set default font properties for Chinese characters
-        plt.rcParams['font.sans-serif'] = ['SimHei', 'SimSun', 'Noto Sans CJK SC', 'DejaVu Sans']
-        plt.rcParams['axes.unicode_minus'] = False  # Fix minus sign display
+        plt.rcParams['font.sans-serif'] = ['Noto Sans CJK SC', 'WenQuanYi Micro Hei', 'SimHei', 'Microsoft YaHei', 'DejaVu Sans']
+        plt.rcParams['axes.unicode_minus'] = False
 except ImportError:
-    pass  # matplotlib not installed
-
-# End of auto-injected font configuration
+    pass
 """
 
     # Create temporary script

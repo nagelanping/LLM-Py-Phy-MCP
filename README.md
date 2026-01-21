@@ -8,29 +8,26 @@
 
 ### 核心工具
 
-1. **python/execute** - 执行 Python 代码，拥有完整的系统访问权限（用户级权限）
-   - 支持多行代码执行
-   - 支持所有标准库和已安装的包
-   - 返回标准输出、标准错误和执行结果
-   - 可配置超时时间
+1. **python_execute** - 执行Python代码，支持完整系统访问、包导入、多行代码，返回stdout/stderr
 
-2. **python/eval** - 快速表达式求值
-   - 快速计算简单表达式
-   - 适用于计算和数据转换
+2. **python_eval** - 快速求值Python表达式并返回结果
 
-3. **python/install** - 包管理
-   - 通过 pip 安装包
-   - 支持一次安装多个包
-   - 可选升级标志用于更新现有包
+3. **python_install** - 使用pip安装Python包，支持单个或多个包
 
-4. **python/run_script** - 脚本执行
-   - 从文件系统运行 Python 脚本
-   - 支持命令行参数
-   - 可配置工作目录和超时时间
+4. **python_run_script** - 运行Python脚本文件
 
-5. **python/list_packages** - 列出已安装的包
-   - 查看所有已安装的 Python 包
-   - 返回包名和版本信息
+5. **python_list_packages** - 列出所有已安装的Python包
+
+### 中文字体支持
+
+本MCP服务器自动配置中文字体支持，聚焦于Python绘图最常用的字体：
+
+- **Noto Sans CJK SC** (思源黑体) - Google开源，最通用
+- **WenQuanYi Micro Hei** (文泉驿微米黑) - Linux常见
+- **SimHei** (黑体) - Windows常见
+- **Microsoft YaHei** (微软雅黑) - Windows常见
+
+执行的Python代码会自动注入matplotlib字体配置，确保中文正常显示。
 
 **包含的 Python 库（参考 `requirements.txt` ）：**
 ```
@@ -139,6 +136,26 @@ bash setup.sh
 python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
+```
+
+## 中文字体配置
+
+使用 [`setup_chinese_fonts.py`](setup_chinese_fonts.py) 自动配置中文字体：
+
+```bash
+# 自动查找并链接系统字体
+python setup_chinese_fonts.py auto
+
+# 链接指定字体目录
+python setup_chinese_fonts.py link /usr/share/fonts/truetype/wqy
+
+# 列出当前配置的字体
+python setup_chinese_fonts.py list
+```
+
+**推荐安装的字体包（Debian/Ubuntu）：**
+```bash
+sudo apt-get install fonts-wqy-microhei fonts-noto-cjk
 ```
 
 ## 配置
