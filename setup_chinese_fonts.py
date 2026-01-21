@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """
 中文字体配置辅助脚本
-动态扫描系统字体，无需预设字体列表
+职责：仅负责将系统字体链接或复制到 fonts/ 文件夹
+字体识别和应用由 server.py 负责
 """
 
 import os
@@ -57,7 +58,7 @@ def scan_font_directories():
 
 def display_font_families(families):
     """显示字体家族列表"""
-    print("\n找到以下字体家族:")
+    print("\n找到以下字体目录:")
     family_list = []
     
     for idx, (family_key, fonts) in enumerate(sorted(families.items()), 1):
@@ -72,10 +73,10 @@ def select_families_interactive(families):
     family_list = display_font_families(families)
     
     while True:
-        choice = input("\n请输入要链接的字体家族编号 (多选用逗号分隔, 如: 1,3): ").strip()
+        choice = input("\n请输入要链接的字体目录编号 (多选用逗号分隔, 如: 1,3): ").strip()
         
         if not choice:
-            print("✗ 未选择任何字体家族")
+            print("✗ 未选择任何字体目录")
             return []
         
         try:
@@ -171,8 +172,8 @@ def print_usage():
   python setup_chinese_fonts.py [命令] [参数]
 
 命令:
-  (无参数)           交互式模式，选择字体家族
-  auto               自动模式：链接第一个可用字体家族
+  (无参数)           交互式模式，选择字体目录
+  auto               自动模式：链接第一个可用字体目录
   link <目录>        链接整个字体目录到 fonts 文件夹
   list               列出当前 fonts 文件夹中的字体
 
@@ -181,6 +182,11 @@ def print_usage():
   python setup_chinese_fonts.py auto
   python setup_chinese_fonts.py link /usr/share/fonts/truetype/wqy
   python setup_chinese_fonts.py list
+
+说明:
+  - 此脚本仅负责将字体复制或链接到 fonts/ 文件夹
+  - 字体识别和应用由 server.py 自动完成
+  - 推荐使用符号链接方式以节省磁盘空间
 """)
 
 
@@ -228,7 +234,7 @@ def main():
     for font in current_fonts:
         print(f"  - {font.name}")
     
-    # 查找系统字体（按家族分组）
+    # 查找系统字体（按目录分组）
     print("\n正在扫描系统字体目录...")
     font_families = scan_font_directories()
     
@@ -239,12 +245,12 @@ def main():
         print("     python setup_chinese_fonts.py link <字体目录>")
         return
     
-    print(f"✓ 找到 {len(font_families)} 个字体家族")
+    print(f"✓ 找到 {len(font_families)} 个字体目录")
     
-    # 自动模式：链接第一个字体家族
+    # 自动模式：链接第一个字体目录
     if "auto" in args:
         first_family = list(font_families.keys())[0]
-        print(f"\n自动选择字体家族: {first_family}")
+        print(f"\n自动选择字体目录: {first_family}")
         fonts_to_link = font_families[first_family]
         print(f"找到 {len(fonts_to_link)} 个字体文件")
         print("\n正在创建符号链接...")
@@ -253,7 +259,7 @@ def main():
         print("\n下一步: 重启 MCP 服务器\n")
         return
     
-    # 交互式模式：显示字体家族供用户选择
+    # 交互式模式：显示字体目录供用户选择
     selected_families = None
     while selected_families is None:
         selected_families = select_families_interactive(font_families)
@@ -267,9 +273,9 @@ def main():
         print("\n未执行任何操作")
         return
     
-    # 获取选中家族的所有字体
+    # 获取选中目录的所有字体
     fonts_to_link = get_fonts_from_families(font_families, selected_families)
-    print(f"\n选中的字体家族: {', '.join(selected_families)}")
+    print(f"\n选中的字体目录: {', '.join(selected_families)}")
     print(f"共 {len(fonts_to_link)} 个字体文件")
     
     # 询问操作方式

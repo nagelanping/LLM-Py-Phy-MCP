@@ -214,13 +214,30 @@ async def execute_python(args: dict) -> list[TextContent]:
     timeout = args.get("timeout", 30)
 
     # Prepend matplotlib font configuration for Chinese characters
+    # 使用绝对路径确保字体正确加载
+    fonts_dir_abs = str(FONTS_DIR.resolve())
+    mpl_config_dir_abs = str((Path(__file__).parent / ".matplotlib").resolve())
+    
     font_config = f"""
 # Auto-injected: Chinese font configuration
 import os
+import re
 from pathlib import Path
 
-fonts_dir = Path(r"{FONTS_DIR}")
-os.environ["MPLCONFIGDIR"] = str(Path(r"{Path(__file__).parent}") / ".matplotlib")
+def extract_font_family(filename):
+    \"\"\"从文件名提取字体家族名称\"\"\"
+    # 移除扩展名
+    name = Path(filename).stem
+    # 移除字重后缀
+    name = re.sub(r'-(Bold|Regular|Light|Medium|Thin|ExtraLight|SemiBold|Black|Heavy|Italic|BoldItalic|LightItalic|SemiBoldItalic|ExtraLightItalic)+$', '', name, flags=re.IGNORECASE)
+    # 在驼峰命名处添加空格
+    name = re.sub(r'([a-z])([A-Z])', r'\\1 \\2', name)
+    name = re.sub(r'([A-Z]+)([A-Z][a-z])', r'\\1 \\2', name)
+    return name.strip()
+
+# 使用绝对路径（从 server.py 传入）
+fonts_dir = Path(r"{fonts_dir_abs}")
+os.environ["MPLCONFIGDIR"] = r"{mpl_config_dir_abs}"
 
 try:
     import matplotlib
@@ -228,27 +245,29 @@ try:
     import matplotlib.pyplot as plt
     import matplotlib.font_manager as fm
 
-    # 动态加载 fonts/ 目录中的所有字体文件
-    font_families = []
+    # 动态加载 fonts/ 目录中的所有字体文件，并从文件名提取字体家族
+    font_families = set()
     if fonts_dir.exists():
         for ext in ["*.ttf", "*.otf", "*.ttc"]:
             for font_file in fonts_dir.glob(ext):
                 try:
-                    # 添加字体到 matplotlib
-                    fm.fontManager.addfont(str(font_file))
-                    # 从文件中提取真实字体名称
-                    prop = fm.FontProperties(fname=str(font_file))
-                    family_name = prop.get_name()
-                    if family_name not in font_families:
-                        font_families.append(family_name)
+                    # 使用绝对路径添加字体到 matplotlib
+                    font_path_abs = str(font_file.resolve())
+                    fm.fontManager.addfont(font_path_abs)
+                    # 从文件名提取字体家族名称
+                    family = extract_font_family(font_file.name)
+                    font_families.add(family)
                 except Exception:
                     pass
     
-    # 使用实际加载的字体配置 matplotlib
+    # 使用提取的字体家族配置 matplotlib
     if font_families:
-        plt.rcParams['font.sans-serif'] = font_families
+        plt.rcParams['font.sans-serif'] = list(font_families) + ['DejaVu Sans']
         plt.rcParams['axes.unicode_minus'] = False
 except ImportError:
+    pass
+except Exception:
+    # 确保字体配置失败不会影响代码执行
     pass
 """
 
