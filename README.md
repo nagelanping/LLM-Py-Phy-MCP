@@ -8,26 +8,15 @@
 
 ### 核心工具
 
-1. **python_execute** - 执行Python代码，支持完整系统访问、包导入、多行代码，返回stdout/stderr
+1. **python_execute** - 执行 Python 代码，支持完整系统访问、包导入、多行代码，返回 stdout/stderr
 
-2. **python_eval** - 快速求值Python表达式并返回结果
+2. **python_eval** - 快速求值 Python 表达式并返回结果
 
-3. **python_install** - 使用pip安装Python包，支持单个或多个包
+3. **python_install** - 使用 pip 安装 Python 包，支持单个或多个包
 
-4. **python_run_script** - 运行Python脚本文件
+4. **python_run_script** - 运行 Python 脚本文件
 
-5. **python_list_packages** - 列出所有已安装的Python包
-
-### 中文字体支持
-
-本MCP服务器自动配置中文字体支持，聚焦于Python绘图最常用的字体：
-
-- **Noto Sans CJK SC** (思源黑体) - Google开源，最通用
-- **WenQuanYi Micro Hei** (文泉驿微米黑) - Linux常见
-- **SimHei** (黑体) - Windows常见
-- **Microsoft YaHei** (微软雅黑) - Windows常见
-
-执行的Python代码会自动注入matplotlib字体配置，确保中文正常显示。
+5. **python_list_packages** - 列出所有已安装的 Python 包
 
 **包含的 Python 库（参考 `requirements.txt` ）：**
 ```
@@ -55,8 +44,7 @@ openpyxl>=3.1.0            # Excel 文件读写 (.xlsx)
 xlrd>=2.0.1                # Excel 文件读取 (.xls)
 xlsxwriter>=3.1.0          # Excel 文件写入（高级格式）
 python-docx>=0.8.11        # Word 文档 (.docx) 处理
-pypdf>=3.15.0              # PDF 读取和提取
-PyPDF2>=3.0.0              # PDF 处理（备选）
+pypdf>=3.15.0              # PDF 读取和提取（替代PyPDF2）
 pdfplumber>=0.9.0          # PDF 表格提取
 reportlab>=4.0.0           # PDF 生成
 pillow>=10.0.0             # 图像处理
@@ -76,9 +64,8 @@ jinja2>=3.1.0              # 模板引擎
 # ============================================
 # 网络请求与API
 # ============================================
-requests>=2.31.0           # HTTP 请求
-httpx>=0.24.0              # 异步 HTTP 客户端
-aiohttp>=3.8.0             # 异步 HTTP 服务器/客户端
+requests>=2.31.0           # HTTP 请求（同步）
+httpx>=0.24.0              # HTTP 客户端（支持同步和异步）
 urllib3>=2.0.0             # HTTP 连接池
 
 # ============================================
@@ -124,6 +111,7 @@ pyjwt>=2.8.0               # JWT 令牌
 chardet>=5.1.0             # 字符编码检测
 python-magic>=0.4.27       # 文件类型识别
 tabulate>=0.9.0            # 表格格式化输出
+
 ```
 
 ## 安装
@@ -137,6 +125,16 @@ python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
 ```
+
+## 中文字体支持
+
+该 MCP 服务器支持配置中文字体，Python 绘图常见字体示例：
+
+- **Noto Sans CJK** (思源黑体)
+- **Sarasa Gothic** (更纱黑体)
+- **WenQuanYi Micro Hei** (文泉驿微米黑)
+
+执行的Python代码会自动注入matplotlib字体配置，确保中文正常显示。
 
 ## 中文字体配置
 
@@ -153,12 +151,7 @@ python setup_chinese_fonts.py link /usr/share/fonts/truetype/wqy
 python setup_chinese_fonts.py list
 ```
 
-**推荐安装的字体包（Debian/Ubuntu）：**
-```bash
-sudo apt-get install fonts-wqy-microhei fonts-noto-cjk
-```
-
-## 配置
+## MCP 配置
 
 将以下配置添加到 MCP 客户端配置文件中（例如 `~/.cherrystudio/mcp/config.json`）：
 

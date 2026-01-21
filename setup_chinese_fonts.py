@@ -14,22 +14,18 @@ SCRIPT_DIR = Path(__file__).parent
 FONTS_DIR = SCRIPT_DIR / "fonts"
 FONTS_DIR.mkdir(exist_ok=True)
 
-# Python 绘图最常用的中文字体路径
+# Linux 下 Python 绘图常用的中文字体路径
 SYSTEM_FONT_PATHS = [
-    "/usr/share/fonts/truetype/wqy",      # 文泉驿
-    "/usr/share/fonts/truetype/noto",     # 思源黑体
-    "/usr/share/fonts/opentype/noto",     # 思源黑体
-    "/System/Library/Fonts",              # macOS
-    "/Library/Fonts",                     # macOS
-    "C:/Windows/Fonts",                   # Windows
+    "/usr/share/fonts/sarasa-gothic",     # 更纱黑体
+    "/usr/share/fonts/noto",              # 思源黑体
+    "/usr/share/fonts/wqy",               # 文泉驿
 ]
 
 # 最常用的中文字体（按优先级排序）
 CHINESE_FONT_PATTERNS = [
+    "Sarasa",         # Sarasa Gothic (更纱黑体) - 优先
     "Noto",           # Noto Sans CJK SC (思源黑体) - 最通用
-    "wqy",            # WenQuanYi Micro Hei (文泉驿微米黑) - Linux 常见
-    "SimHei",         # 黑体 - Windows 常见
-    "msyh",           # Microsoft YaHei (微软雅黑) - Windows 常见
+    "wqy",            # WenQuanYi Micro Hei (文泉驿微米黑) - 常见
 ]
 
 
