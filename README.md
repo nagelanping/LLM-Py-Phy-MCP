@@ -1,8 +1,8 @@
 # LLM-Py-Phy-MCP 服务器
 
-**Linux 平台**下的一个为 LLM 提供**实体机 Python 执行能力**的模型上下文协议（MCP）服务器，包含多种 Python 库。
-- 核心逻辑部分完全跨平台，**迁移到 Windows 需要调整路径处理和系统指令**
-- **警告**：此 MCP 专为 LLM 在实体机执行 Python 代码而设计。在启用此服务器之前，请确保 LLM 代理是可信的，或通过客户端配置 MCP 工具执行前的权限。
+一个为 LLM 提供实体机 Python 执行能力的模型上下文协议（MCP）服务器，支持 Linux 和 Windows 平台，包含多种 Python 库。
+
+**警告**：此 MCP 专为 LLM 在实体机执行 Python 代码而设计。在启用此服务器之前，请确保 LLM 代理是可信的，或通过客户端配置 MCP 工具执行前的权限。
 
 ## 功能特性
 
@@ -18,7 +18,10 @@
 
 5. **python_list_packages** - 列出所有已安装的 Python 包
 
-**包含的 Python 库（参考 `requirements.txt` ）：**
+### 包含的 Python 库
+
+参考 `requirements.txt`，包含以下主要类别：
+
 ```
 # ============================================
 # MCP Server Dependencies
@@ -116,6 +119,8 @@ tabulate>=0.9.0            # 表格格式化输出
 
 ## 安装
 
+### Linux 平台
+
 ```bash
 # 运行安装脚本
 bash setup.sh
@@ -126,35 +131,61 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
+### Windows 平台
+
+在命令提示符或 PowerShell 中运行：
+
+```batch
+setup.bat
+```
+
+该脚本会自动创建虚拟环境、升级 pip 并安装所有依赖包。
+
+#### Windows 手动安装
+
+```batch
+python -m venv venv
+venv\Scripts\activate
+pip install -r requirements.txt
+```
+
 ## 中文字体支持
 
-该 MCP 服务器支持配置中文字体，Python 绘图常见字体示例：
+### Linux 平台
+
+Linux 版本支持配置中文字体，Python 绘图常见字体示例：
 
 - **Noto Sans CJK** (思源黑体)
 - **Sarasa Gothic** (更纱黑体)
 - **WenQuanYi Micro Hei** (文泉驿微米黑)
 
-执行的Python代码会自动注入matplotlib字体配置，确保中文正常显示。
+执行的 Python 代码会自动注入 matplotlib 字体配置，确保中文正常显示。
 
-## 中文字体配置
+#### 配置中文字体
 
-使用 [`setup_chinese_fonts.py`](setup_chinese_fonts.py) 自动配置中文字体：
+使用 `setup_chinese_fonts.py` 自动配置中文字体：
 
 ```bash
 python setup_chinese_fonts.py
 ```
 
+### Windows 平台
+
+Windows 版本暂时不包含中文字体配置。如需在 matplotlib 中使用特定中文字体，请在代码中手动配置或优化 prompt 让 llm 主动使用对应字体。
+
 ## MCP 配置
 
-将以下配置添加到 MCP 客户端配置文件中（例如 `~/.cherrystudio/mcp/config.json`）：
+### Linux 平台
+
+将以下配置添加到 MCP 客户端配置文件中（例如 `~/.cherrystudio/mcp/config.json` 或 Claude Desktop 的配置文件）：
 
 ```json
 {
   "mcpServers": {
     "python": {
-      "command": "/path/to/mcp/python/venv/bin/python",
+      "command": "/path/to/LLM-Py-Phy-MCP/linux/venv/bin/python",
       "args": [
-        "/path/to/mcp/python/server.py"
+        "/path/to/LLM-Py-Phy-MCP/linux/server.py"
       ],
       "env": {}
     }
@@ -162,18 +193,78 @@ python setup_chinese_fonts.py
 }
 ```
 
-请将 `/path/to/mcp/python` 替换为 MCP Python 服务器目录的实际路径。
+请将 `/path/to/LLM-Py-Phy-MCP` 替换为 MCP Python 服务器目录的实际路径。
+
+### Windows 平台
+
+编辑配置文件，使用绝对路径并注意使用双反斜杠 `\\` 或单正斜杠 `/`：
+
+```json
+{
+  "mcpServers": {
+    "python": {
+      "command": "X:\\path\\to\\LLM-Py-Phy-MCP\\windows\\venv\\Scripts\\python.exe",
+      "args": [
+        "X:\\path\\to\\LLM-Py-Phy-MCP\\windows\\server.py"
+      ],
+      "env": {}
+    }
+  }
+}
+```
+
+替换路径、配置完成后，重启 MCP 客户端以加载新配置。
 
 ## 系统要求
 
-- Python 3.8 或更高版本
-- mcp 工具包
+- **Linux**: 任何主流发行版
+- **Windows**: Windows 10/11
+- **Python**: 3.8 或更高版本
+- **磁盘空间**: 至少 1GB 可用空间
+- **MCP**: mcp 工具包
 
 ## 安全说明
 
-- **代码以用户级权限执行**
-- **无沙箱隔离 - 仅与可信的 LLM 代理一起使用**
-- 工作目录默认为 /tmp
+- 代码以用户级权限执行
+- 无沙箱隔离 - 仅与可信的 LLM 代理一起使用
+- Linux 工作目录默认为 /tmp
+- Windows 工作目录默认为系统临时目录
+
+## 技术说明
+
+### Linux 版本特性
+
+- 虚拟环境路径：`venv/bin/python`
+- 临时目录：`/tmp`
+- 自动注入中文字体配置到执行的 Python 代码
+- 动态加载 `fonts/` 目录中的字体文件
+
+### Windows 版本特性
+
+- 虚拟环境路径：`venv\Scripts\python.exe`
+- 临时目录：使用 `tempfile.gettempdir()` 获取系统临时目录
+- 文件操作使用 UTF-8 编码，错误时使用替换模式
+- 使用异步 subprocess 执行，防止继承 MCP stdio
+
+## 故障排除
+
+### 虚拟环境创建失败
+
+确保 Python 已正确安装并添加到 PATH 环境变量中。
+
+### 依赖安装失败
+
+某些包可能需要 C++ 编译器：
+
+- **Linux**: 安装 `build-essential` 和 `python3-dev`
+- **Windows**: 安装 Visual Studio Build Tools 或使用预编译的 wheel 文件
+
+### MCP 客户端无法连接
+
+1. 检查配置文件中的路径是否正确
+2. 确保使用绝对路径
+3. 检查虚拟环境是否正确创建
+4. 查看 MCP 客户端的日志输出
 
 ## 许可证
 
