@@ -97,7 +97,7 @@ async def list_tools() -> list[Tool]:
                 "properties": {
                     "code": {
                         "type": "string",
-                        "description": "要执行的Python代码"
+                        "description": "要执行的Python代码(在一个代码块中完成所有操作)"
                     },
                     "working_dir": {
                         "type": "string",

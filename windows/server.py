@@ -82,7 +82,7 @@ async def list_tools() -> list[Tool]:
             inputSchema={
                 "type": "object",
                 "properties": {
-                    "code": {"type": "string", "description": "要执行的Python代码"},
+                    "code": {"type": "string", "description": "要执行的Python代码(在一个代码块中完成所有操作)"},
                     "working_dir": {
                         "type": "string",
                         "description": f"工作目录(可选，默认{TEMP_DIR})",
